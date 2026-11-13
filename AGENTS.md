@@ -6,7 +6,7 @@ A React + TypeScript + Vite kiosk and a Supabase Edge Function. Nurses record bl
 
 - No patient sign-in and no patient-facing screens.
 - Patient details (names, dates of birth, card codes) never go to Ovok, logs, browser storage or URLs. Only `patients.id` (the pseudonym) and `ovok_patient_id` cross the boundary.
-- The register is reached only through `supabase/functions/patients`. Keep row level security on with no grants to `anon` or `authenticated`.
+- The register is reached only through `supabase/functions/patients`, and readings arrive only through `receiver/`. Keep row level security on with no grants to `anon` or `authenticated`.
 - The kiosk records; it never interprets readings or raises alerts. Signals in Ovok decides alerts.
 - The screen never shows the previous patient to the next one: keep the idle reset and "Next patient".
 
@@ -30,4 +30,5 @@ Run `npm run check` after code changes. After a user-facing change, run `npm run
 - `supabase/functions/patients/`: the register's only door.
 - `src/lib/`: Ovok client, register client, reading save and parsing.
 - `src/components/`: the kiosk screens.
-- `tests/`: function and parser tests.
+- `receiver/`: the MLLP receiver that files Ovok's HL7 v2 readings into Supabase.
+- `tests/`: function, parser and HL7 tests.

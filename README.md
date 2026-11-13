@@ -82,6 +82,40 @@ Details: [Configure the Ovok project](https://docs.ovok.com/guides/staffed-kiosk
 | `npm run check` | Run the tests and the build. |
 | `npm run supabase -- <command>` | Run the Supabase CLI, for example `start`, `stop` or `db reset`. |
 
+## Receive readings over HL7 v2 (optional)
+
+Your Supabase can take every reading back from Ovok as an HL7 v2 message, through Ovok's HL7 agent. The register then holds the readings next to the people, as a hospital system would.
+
+```text
+Ovok ──wss──▶ HL7 agent ──MLLP──▶ receiver/ ──▶ Supabase readings
+```
+
+- The agent is Medplum's open-source `@medplum/agent`. It runs on your side and connects out to Ovok, so you open no inbound port.
+- `receiver/` is a small MLLP server. It files each numeric value from Ovok's IHE PCD-01 `ORU^R01` into the `readings` table and answers `AA`. It answers `AR` for a malformed message or an unknown patient, and `AE` when a retry may work. A resend carries the same control id, so it never stores a reading twice.
+- Make the connection with the register's identifier system as its patient identifier system. `PID-3` then carries the pseudonym, and the receiver files the reading under the right patient without any other ID.
+
+1. As a project admin, create the connection. Send only the panel and the heart rate, so each reading arrives once:
+
+   ```sh
+   curl -X POST https://api.sandbox.ovok.com/v1/hl7-connections \
+     -H "Authorization: Bearer $OVOK_ADMIN_TOKEN" -H 'Content-Type: application/json' \
+     -d '{"name":"Kiosk CIS","destination":"mllp://127.0.0.1:2575",
+          "patientIdentifierSystem":"https://kiosk.example.org/patient-id",
+          "criteria":"Observation?code=http://loinc.org|85354-9,http://loinc.org|8867-4"}'
+   ```
+
+2. Copy `.env.receiver.example` to `.env.receiver.local`, set the service role key from `npm run supabase -- status`, and start the receiver with `npm run receiver`.
+3. Run the agent in its own folder, with the four values the connection answered once in `agent.properties` (`baseUrl`, `clientId`, `clientSecret`, `agentId`, one `key=value` per line):
+
+   ```sh
+   npm install @medplum/agent@5.0.13
+   node node_modules/@medplum/agent/dist/cjs/index.cjs
+   ```
+
+   The agent signs in and opens `wss://api.sandbox.ovok.com/ws/agent`. On Windows, use Medplum's agent installer instead.
+
+Details: [Receive readings over HL7 v2](https://docs.ovok.com/guides/staffed-kiosk/receive-readings-over-hl7).
+
 ## Self-hosting
 
 Run Supabase on your own servers with its Docker Compose setup, apply `supabase/migrations`, and deploy `supabase/functions/patients` to the functions service with the same three variables. Serve the kiosk's `dist/` over HTTPS. See [Run it on the ward](https://docs.ovok.com/guides/staffed-kiosk/run-it-on-the-ward).
