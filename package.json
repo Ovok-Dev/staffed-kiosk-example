@@ -14,11 +14,15 @@
     "typecheck": "tsc -b --pretty false",
     "test": "vitest run",
     "check": "npm test && npm run build",
-    "supabase": "supabase"
+    "supabase": "supabase",
+    "receiver": "node --env-file-if-exists=.env.receiver.local receiver/server.ts"
   },
   "dependencies": {
     "@fontsource-variable/open-sans": "^5.2.6",
+    "@medplum/core": "^5.0.13",
+    "@medplum/hl7": "^5.0.13",
     "@ovok/core": "^0.4.58",
+    "@supabase/supabase-js": "^2.118.0",
     "lucide-react": "^1.72.0",
     "react": "^19.3.1",
     "react-dom": "^19.3.1"
